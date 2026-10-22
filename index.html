@@ -93,6 +93,8 @@ li.late { background: var(--overdue-bg); }
 li input[type="checkbox"] { width: 26px; height: 26px; margin: 2px 0 0; accent-color: var(--oc, var(--accent)); flex: none; cursor: pointer; }
 .body { flex: 1; min-width: 0; }
 .text { overflow-wrap: anywhere; }
+li .text { font-weight: 500; color: var(--ink); }
+li.soon .text { font-weight: 700; color: var(--overdue); }
 .due { font-size: 0.95rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 li.late .due { color: var(--overdue); font-weight: 600; }
 li.done .text { text-decoration: line-through; color: var(--muted); }
@@ -437,7 +439,10 @@ li.done + li { border-top: 0; margin-top: 6px; }
       var ul = el("ul");
       g.list.forEach(function (it) {
         var isLate = !it.done && it.due < t;
-        var li = el("li", (isLate ? "late " : "") + (it.done ? "done" : ""));
+        // Open actions due in under 3 days (including overdue ones) get a bold red name.
+        var daysLeft = Math.round((new Date(it.due) - new Date(t)) / 86400000);
+        var isSoon = !it.done && daysLeft < 3;
+        var li = el("li", (isLate ? "late " : "") + (isSoon ? "soon " : "") + (it.done ? "done" : ""));
         var cb = document.createElement("input");
         cb.type = "checkbox"; cb.checked = it.done; cb.id = "c-" + it.id;
         cb.setAttribute("aria-label", "Mark done: " + it.text);
@@ -447,7 +452,7 @@ li.done + li { border-top: 0; margin-top: 6px; }
         });
         var body = el("div", "body");
         var tx = el("label", "text", it.text);
-        tx.htmlFor = cb.id; tx.style.cssText = "display:block;font-weight:500;font-size:inherit;color:inherit;cursor:pointer";
+        tx.htmlFor = cb.id; tx.style.cssText = "display:block;font-size:inherit;cursor:pointer";
         body.appendChild(tx);
         body.appendChild(el("div", "due", dueLabel(it, t)));
         var del = el("button", "del", "×");
