@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Meeting action tracker: owners, due dates, open vs done counts and overdue highlights.">
+<title>Action Tracker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: one narrow column. Summary tiles first, add-form card, then one card per owner. */
+:root {
+  --bg: #f7ecea;
+  --card: #fdf8f7;
+  --ink: #2d2322;
+  --muted: #85726f;
+  --line: #ebd6d3;
+  --accent: #e0301e;
+  --accent-text: #e0301e;
+  --accent-ink: #ffffff;
+  --grad: linear-gradient(120deg, #e5384f 0%, #ee7b1d 50%, #c2409f 100%);
+  --c1: #e5384f; --c2: #e0701a; --c3: #1f9d6b; --c4: #1789b8; --c5: #5b5bd6; --c6: #c2409f; --oc-ink: #ffffff;
+  --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Cg transform='translate%2838 38%29 rotate%28-10%29'%3E%3Cdefs%3E%3CclipPath id='c'%3E%3Ccircle r='16'/%3E%3C/clipPath%3E%3C/defs%3E%3Ccircle r='16' fill='none' stroke='%232d2322' stroke-width='1.4' opacity='0.2'/%3E%3Cg clip-path='url%28%2523c%29'%3E%3Cpath d='M0.00 -5.20L4.95 -1.61L3.06 4.21L-3.06 4.21L-4.95 -1.61ZM0.00 -8.00L-4.57 -11.32L-2.82 -16.68L2.82 -16.68L4.57 -11.32ZM7.61 -2.47L9.35 -7.84L14.99 -7.84L16.74 -2.47L12.17 0.84ZM4.70 6.47L10.35 6.47L12.09 11.84L7.52 15.16L2.96 11.84ZM-4.70 6.47L-2.96 11.84L-7.52 15.16L-12.09 11.84L-10.35 6.47ZM-7.61 -2.47L-12.17 0.84L-16.74 -2.47L-14.99 -7.84L-9.35 -7.84Z' fill='%232d2322' opacity='0.14'/%3E%3C/g%3E%3Cpath d='M0.00 -5.20L0.00 -8.00M4.95 -1.61L7.61 -2.47M3.06 4.21L4.70 6.47M-3.06 4.21L-4.70 6.47M-4.95 -1.61L-7.61 -2.47' fill='none' stroke='%232d2322' stroke-width='1.3' stroke-linecap='round' opacity='0.2'/%3E%3C/g%3E%3Cg transform='translate%28113 113%29 rotate%2818%29'%3E%3Cdefs%3E%3CclipPath id='c2'%3E%3Ccircle r='16'/%3E%3C/clipPath%3E%3C/defs%3E%3Ccircle r='16' fill='none' stroke='%232d2322' stroke-width='1.4' opacity='0.2'/%3E%3Cg clip-path='url%28%2523c2%29'%3E%3Cpath d='M0.00 -5.20L4.95 -1.61L3.06 4.21L-3.06 4.21L-4.95 -1.61ZM0.00 -8.00L-4.57 -11.32L-2.82 -16.68L2.82 -16.68L4.57 -11.32ZM7.61 -2.47L9.35 -7.84L14.99 -7.84L16.74 -2.47L12.17 0.84ZM4.70 6.47L10.35 6.47L12.09 11.84L7.52 15.16L2.96 11.84ZM-4.70 6.47L-2.96 11.84L-7.52 15.16L-12.09 11.84L-10.35 6.47ZM-7.61 -2.47L-12.17 0.84L-16.74 -2.47L-14.99 -7.84L-9.35 -7.84Z' fill='%232d2322' opacity='0.14'/%3E%3C/g%3E%3Cpath d='M0.00 -5.20L0.00 -8.00M4.95 -1.61L7.61 -2.47M3.06 4.21L4.70 6.47M-3.06 4.21L-4.70 6.47M-4.95 -1.61L-7.61 -2.47' fill='none' stroke='%232d2322' stroke-width='1.3' stroke-linecap='round' opacity='0.2'/%3E%3C/g%3E%3C/svg%3E");
+  --btn-shadow: 0 6px 16px rgba(229, 56, 79, 0.3);
+  --overdue: #8a0f0f;
+  --overdue-bg: #f3cbc6;
+  --done-bg: #fff6cc;
+  --done-line: #e6c44d;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Figtree", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1d1615; --card: #281e1d; --ink: #f1e7e5; --muted: #a39492; --line: #3e3130;
+    --accent: #ff5a47; --accent-text: #ff5a47; --accent-ink: #1d0a08; --grad: linear-gradient(120deg, #ff6b7d 0%, #ffa24d 50%, #f08bd6 100%); --c1: #ff7a8a; --c2: #ffa94d; --c3: #4cd9a0; --c4: #5ac8f0; --c5: #9a9aff; --c6: #f08bd6; --oc-ink: #1a1416; --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Cg transform='translate%2838 38%29 rotate%28-10%29'%3E%3Cdefs%3E%3CclipPath id='c'%3E%3Ccircle r='16'/%3E%3C/clipPath%3E%3C/defs%3E%3Ccircle r='16' fill='none' stroke='%23f1e7e5' stroke-width='1.4' opacity='0.2'/%3E%3Cg clip-path='url%28%2523c%29'%3E%3Cpath d='M0.00 -5.20L4.95 -1.61L3.06 4.21L-3.06 4.21L-4.95 -1.61ZM0.00 -8.00L-4.57 -11.32L-2.82 -16.68L2.82 -16.68L4.57 -11.32ZM7.61 -2.47L9.35 -7.84L14.99 -7.84L16.74 -2.47L12.17 0.84ZM4.70 6.47L10.35 6.47L12.09 11.84L7.52 15.16L2.96 11.84ZM-4.70 6.47L-2.96 11.84L-7.52 15.16L-12.09 11.84L-10.35 6.47ZM-7.61 -2.47L-12.17 0.84L-16.74 -2.47L-14.99 -7.84L-9.35 -7.84Z' fill='%23f1e7e5' opacity='0.14'/%3E%3C/g%3E%3Cpath d='M0.00 -5.20L0.00 -8.00M4.95 -1.61L7.61 -2.47M3.06 4.21L4.70 6.47M-3.06 4.21L-4.70 6.47M-4.95 -1.61L-7.61 -2.47' fill='none' stroke='%23f1e7e5' stroke-width='1.3' stroke-linecap='round' opacity='0.2'/%3E%3C/g%3E%3Cg transform='translate%28113 113%29 rotate%2818%29'%3E%3Cdefs%3E%3CclipPath id='c2'%3E%3Ccircle r='16'/%3E%3C/clipPath%3E%3C/defs%3E%3Ccircle r='16' fill='none' stroke='%23f1e7e5' stroke-width='1.4' opacity='0.2'/%3E%3Cg clip-path='url%28%2523c2%29'%3E%3Cpath d='M0.00 -5.20L4.95 -1.61L3.06 4.21L-3.06 4.21L-4.95 -1.61ZM0.00 -8.00L-4.57 -11.32L-2.82 -16.68L2.82 -16.68L4.57 -11.32ZM7.61 -2.47L9.35 -7.84L14.99 -7.84L16.74 -2.47L12.17 0.84ZM4.70 6.47L10.35 6.47L12.09 11.84L7.52 15.16L2.96 11.84ZM-4.70 6.47L-2.96 11.84L-7.52 15.16L-12.09 11.84L-10.35 6.47ZM-7.61 -2.47L-12.17 0.84L-16.74 -2.47L-14.99 -7.84L-9.35 -7.84Z' fill='%23f1e7e5' opacity='0.14'/%3E%3C/g%3E%3Cpath d='M0.00 -5.20L0.00 -8.00M4.95 -1.61L7.61 -2.47M3.06 4.21L4.70 6.47M-3.06 4.21L-4.70 6.47M-4.95 -1.61L-7.61 -2.47' fill='none' stroke='%23f1e7e5' stroke-width='1.3' stroke-linecap='round' opacity='0.2'/%3E%3C/g%3E%3C/svg%3E"); --btn-shadow: 0 6px 16px rgba(255, 90, 71, 0.3); --overdue: #ff9a8f; --overdue-bg: #4d201c; --done-bg: #3a3218; --done-line: #8a7420;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1d1615; --card: #281e1d; --ink: #f1e7e5; --muted: #a39492; --line: #3e3130;
+  --accent: #ff5a47; --accent-text: #ff5a47; --accent-ink: #1d0a08; --grad: linear-gradient(120deg, #ff6b7d 0%, #ffa24d 50%, #f08bd6 100%); --c1: #ff7a8a; --c2: #ffa94d; --c3: #4cd9a0; --c4: #5ac8f0; --c5: #9a9aff; --c6: #f08bd6; --oc-ink: #1a1416; --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Cg transform='translate%2838 38%29 rotate%28-10%29'%3E%3Cdefs%3E%3CclipPath id='c'%3E%3Ccircle r='16'/%3E%3C/clipPath%3E%3C/defs%3E%3Ccircle r='16' fill='none' stroke='%23f1e7e5' stroke-width='1.4' opacity='0.2'/%3E%3Cg clip-path='url%28%2523c%29'%3E%3Cpath d='M0.00 -5.20L4.95 -1.61L3.06 4.21L-3.06 4.21L-4.95 -1.61ZM0.00 -8.00L-4.57 -11.32L-2.82 -16.68L2.82 -16.68L4.57 -11.32ZM7.61 -2.47L9.35 -7.84L14.99 -7.84L16.74 -2.47L12.17 0.84ZM4.70 6.47L10.35 6.47L12.09 11.84L7.52 15.16L2.96 11.84ZM-4.70 6.47L-2.96 11.84L-7.52 15.16L-12.09 11.84L-10.35 6.47ZM-7.61 -2.47L-12.17 0.84L-16.74 -2.47L-14.99 -7.84L-9.35 -7.84Z' fill='%23f1e7e5' opacity='0.14'/%3E%3C/g%3E%3Cpath d='M0.00 -5.20L0.00 -8.00M4.95 -1.61L7.61 -2.47M3.06 4.21L4.70 6.47M-3.06 4.21L-4.70 6.47M-4.95 -1.61L-7.61 -2.47' fill='none' stroke='%23f1e7e5' stroke-width='1.3' stroke-linecap='round' opacity='0.2'/%3E%3C/g%3E%3Cg transform='translate%28113 113%29 rotate%2818%29'%3E%3Cdefs%3E%3CclipPath id='c2'%3E%3Ccircle r='16'/%3E%3C/clipPath%3E%3C/defs%3E%3Ccircle r='16' fill='none' stroke='%23f1e7e5' stroke-width='1.4' opacity='0.2'/%3E%3Cg clip-path='url%28%2523c2%29'%3E%3Cpath d='M0.00 -5.20L4.95 -1.61L3.06 4.21L-3.06 4.21L-4.95 -1.61ZM0.00 -8.00L-4.57 -11.32L-2.82 -16.68L2.82 -16.68L4.57 -11.32ZM7.61 -2.47L9.35 -7.84L14.99 -7.84L16.74 -2.47L12.17 0.84ZM4.70 6.47L10.35 6.47L12.09 11.84L7.52 15.16L2.96 11.84ZM-4.70 6.47L-2.96 11.84L-7.52 15.16L-12.09 11.84L-10.35 6.47ZM-7.61 -2.47L-12.17 0.84L-16.74 -2.47L-14.99 -7.84L-9.35 -7.84Z' fill='%23f1e7e5' opacity='0.14'/%3E%3C/g%3E%3Cpath d='M0.00 -5.20L0.00 -8.00M4.95 -1.61L7.61 -2.47M3.06 4.21L4.70 6.47M-3.06 4.21L-4.70 6.47M-4.95 -1.61L-7.61 -2.47' fill='none' stroke='%23f1e7e5' stroke-width='1.3' stroke-linecap='round' opacity='0.2'/%3E%3C/g%3E%3C/svg%3E"); --btn-shadow: 0 6px 16px rgba(255, 90, 71, 0.3); --overdue: #ff9a8f; --overdue-bg: #4d201c; --done-bg: #3a3218; --done-line: #8a7420;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background-color: var(--bg); background-image: var(--pattern); background-size: 150px 150px; color: var(--ink);
+  font-family: var(--font-body); font-size: 18px; line-height: 1.45;
+  padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1, h2 { font-family: var(--font-display); margin: 0; text-wrap: balance; }
+h1 { font-size: 2.2rem; line-height: 1.1; color: var(--accent); background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; width: fit-content; }
+.sub { color: var(--muted); margin: 6px 0 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.stat { --t: var(--muted); background: color-mix(in srgb, var(--t) 13%, var(--card)); border: 1px solid color-mix(in srgb, var(--t) 35%, var(--line)); border-radius: 14px; padding: 16px 18px; }
+.stat.open { --t: var(--c5); }
+.stat.done { --t: var(--c3); }
+.stat.late.has { --t: var(--overdue); }
+.stat b { color: var(--t); }
+.stat b { display: block; font-family: var(--font-display); font-size: 2.4rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.06em; }
+form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+form .full { grid-column: 1 / -1; }
+label { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-weight: 600; font-size: 0.9rem; color: var(--muted); }
+input[type="text"], input[type="date"], input[type="password"] {
+  font: inherit; font-size: 1.05rem; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; width: 100%; min-width: 0;
+}
+input:focus-visible, button:focus-visible { outline: 3px solid var(--accent-text); outline-offset: 2px; }
+button { font: inherit; cursor: pointer; }
+.add {
+  background: var(--grad); color: var(--accent-ink); border: 0; border-radius: 10px; box-shadow: var(--btn-shadow);
+  transition: transform .15s ease, box-shadow .15s ease;
+  padding: 13px 22px; font-weight: 600; font-size: 1.05rem; justify-self: start;
+}
+.add:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.add:active { transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) { .add { transition: none; } .add:hover { transform: none; } }
+.err { color: var(--overdue); font-size: 0.95rem; margin: 0; min-height: 1.3em; align-self: center; }
+.group-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--oc); color: var(--oc-ink); display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; flex: none; }
+.group-head { align-items: center; }
+.group-head h2 { font-size: 1.4rem; overflow-wrap: anywhere; }
+.group-head small { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+ul { list-style: none; margin: 0; padding: 0; }
+li { display: flex; align-items: flex-start; gap: 14px; padding: 12px 10px; border-top: 1px solid var(--line); border-radius: 8px; }
+li:first-child { border-top: 0; }
+li.late { background: var(--overdue-bg); }
+li input[type="checkbox"] { width: 26px; height: 26px; margin: 2px 0 0; accent-color: var(--oc, var(--accent)); flex: none; cursor: pointer; }
+.body { flex: 1; min-width: 0; }
+.text { overflow-wrap: anywhere; }
+.due { font-size: 0.95rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+li.late .due { color: var(--overdue); font-weight: 600; }
+li.done .text { text-decoration: line-through; color: var(--muted); }
+/* Completed actions: light-yellow box with a border. */
+li.done { background: var(--done-bg); border: 1.5px solid var(--done-line); margin-top: 6px; }
+li.done + li { border-top: 0; margin-top: 6px; }
+.del { background: none; border: 0; color: var(--muted); font-size: 1.5rem; line-height: 1; padding: 2px 8px; border-radius: 8px; }
+.del:hover { color: var(--overdue); }
+.note { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 0.95rem; }
+.note button { background: none; border: 1px solid var(--line); color: var(--ink); border-radius: 8px; padding: 6px 12px; }
+.empty { text-align: center; color: var(--muted); padding: 28px 12px; }
+.status { margin: 0; padding: 12px 16px; border-radius: 10px; background: var(--overdue-bg); color: var(--overdue); font-weight: 500; }
+.live { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--muted); margin-top: 6px; }
+.live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.live.on::before { background: var(--c3); }
+.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.account { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; color: var(--muted); font-size: 0.95rem; }
+.account b { color: var(--ink); }
+.link { background: none; border: 1px solid var(--line); color: var(--ink); border-radius: 8px; padding: 6px 12px; font-size: 0.95rem; }
+.link:hover { border-color: var(--accent-text); }
+.card > h2 { font-size: 1.4rem; margin-bottom: 14px; }
+.card > .sub { margin: -8px 0 14px; }
+#app { display: flex; flex-direction: column; gap: 20px; }
+#app[hidden], [hidden] { display: none !important; }
+.err.ok { color: var(--c3); }
+.users { margin-bottom: 16px; }
+.users li { align-items: center; padding: 8px 10px; }
+.users .avatar { width: 32px; height: 32px; font-size: 1rem; }
+.badge { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-text); border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; }
+@media (max-width: 520px) {
+  body { font-size: 17px; }
+  h1 { font-size: 1.8rem; }
+  form { grid-template-columns: 1fr; }
+  .stat { padding: 14px; }
+  .stat b { font-size: 2rem; }
+  .stat span { font-size: 0.78rem; }
+}
+</style>
+
+</head>
+<body>
+<main>
+  <header class="top">
+    <div>
+      <h1>Action Tracker</h1>
+      <p class="sub">Every agreed action, with an owner and a date.</p>
+      <span class="live" id="live" hidden>Connecting…</span>
+    </div>
+    <div class="account" id="account" hidden>
+      <span>Signed in as <b id="me"></b></span>
+      <button type="button" class="link" id="pwToggle">Change password</button>
+      <button type="button" class="link" id="signOut">Sign out</button>
+    </div>
+  </header>
+
+  <p class="status" id="status" role="alert" hidden></p>
+
+  <section class="card" id="signin" aria-label="Sign in" hidden>
+    <h2>Sign in</h2>
+    <form id="signinForm" novalidate>
+      <label for="siUser">Username
+        <input type="text" id="siUser" autocomplete="username" autocapitalize="none" spellcheck="false">
+      </label>
+      <label for="siPass">Password
+        <input type="password" id="siPass" autocomplete="current-password">
+      </label>
+      <button class="add" type="submit">Sign in</button>
+      <p class="err" id="siErr" role="alert"></p>
+    </form>
+  </section>
+
+  <section class="card" id="pwCard" aria-label="Change password" hidden>
+    <h2>Change password</h2>
+    <form id="pwForm" novalidate>
+      <label for="pwNew">New password
+        <input type="password" id="pwNew" autocomplete="new-password">
+      </label>
+      <label for="pwConfirm">Confirm new password
+        <input type="password" id="pwConfirm" autocomplete="new-password">
+      </label>
+      <button class="add" type="submit">Save password</button>
+      <p class="err" id="pwErr" role="alert"></p>
+    </form>
+  </section>
+
+  <div id="app" hidden>
+  <section class="stats" aria-label="Summary">
+    <div class="stat open"><b id="nOpen">0</b><span>Open</span></div>
+    <div class="stat done"><b id="nDone">0</b><span>Done</span></div>
+    <div class="stat late" id="lateStat"><b id="nLate">0</b><span>Overdue</span></div>
+  </section>
+
+  <section class="card" aria-label="Add an action">
+    <form id="form" novalidate>
+      <label class="full" for="text">Action
+        <input type="text" id="text" placeholder="e.g. Send revised pricing to the client" autocomplete="off">
+      </label>
+      <label for="owner">Owner
+        <input type="text" id="owner" list="owners" placeholder="Who is responsible?" autocomplete="off">
+        <datalist id="owners"></datalist>
+      </label>
+      <label for="due">Due date
+        <input type="date" id="due">
+      </label>
+      <button class="add" type="submit">Add action</button>
+      <p class="err" id="err" role="alert"></p>
+    </form>
+  </section>
+
+  <div class="note" id="exampleNote" hidden>
+    <span>These are example actions. Clear them to start your own list.</span>
+    <button type="button" id="clearExamples">Clear examples</button>
+  </div>
+
+  <div id="groups" style="display:flex;flex-direction:column;gap:20px"></div>
+
+  <section class="card" id="adminCard" aria-label="Users" hidden>
+    <h2>Users</h2>
+    <p class="sub">Add a teammate with a username and an initial password. They can change it after signing in.</p>
+    <ul class="users" id="userList"></ul>
+    <form id="userForm" novalidate>
+      <label for="nuName">Username
+        <input type="text" id="nuName" autocomplete="off" autocapitalize="none" spellcheck="false">
+      </label>
+      <label for="nuPass">Initial password
+        <input type="text" id="nuPass" autocomplete="off" spellcheck="false">
+      </label>
+      <button class="add" type="submit">Add user</button>
+      <p class="err" id="nuErr" role="alert"></p>
+    </form>
+  </section>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.75.0/dist/umd/supabase.min.js"></script>
+<script>
+(function () {
+  // Data lives in the Supabase table public.actions; only signed-in users can read or change it.
+  var SUPABASE_URL = "https://gxbhnrovgtiylqsukshm.supabase.co";
+  var SUPABASE_KEY = "sb_publishable_XbUUGZiSK3Se4QaC54JE2g_eKxVrcvs";
+  // People sign in with a username. Supabase Auth stores it as username@example.com.
+  var EMAIL_DOMAIN = "example.com";
+  var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  var items = [], loaded = false, profiles = [], me = null, channel = null;
+
+  function $(id) { return document.getElementById(id); }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function setMsg(id, text, ok) { var e = $(id); e.textContent = text || ""; e.classList.toggle("ok", !!ok); }
+  function colorFor(name) {
+    var k = name.toLowerCase(), h = 0;
+    for (var n = 0; n < k.length; n++) h = (h * 31 + k.charCodeAt(n)) % 997;
+    return "var(--c" + (h % 6 + 1) + ")";
+  }
+
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function iso(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function today() { return iso(new Date()); }
+  function offset(days) { var d = new Date(); d.setDate(d.getDate() + days); return iso(d); }
+
+  function showError(msg) {
+    var s = document.getElementById("status");
+    s.textContent = msg || "";
+    s.hidden = !msg;
+  }
+
+  function load() {
+    if (!me) return Promise.resolve();
+    return db.from("actions").select("id,text,owner,due,done,example").order("created_at")
+      .then(function (res) {
+        if (res.error) { showError("Couldn't load actions: " + res.error.message); return; }
+        showError("");
+        items = res.data;
+        loaded = true;
+        render();
+      });
+  }
+
+  // Run a write, then reload so the page matches the database (also covers failures).
+  function write(promise, what) {
+    return promise.then(function (res) {
+      if (res.error) showError("Couldn't " + what + ": " + res.error.message);
+      return load();
+    });
+  }
+
+  function loadProfiles() {
+    return db.from("profiles").select("id,username,is_admin").order("username")
+      .then(function (res) {
+        if (res.error) { showError("Couldn't load users: " + res.error.message); return; }
+        profiles = res.data;
+        renderUsers();
+        render();
+      });
+  }
+
+  function renderUsers() {
+    var ul = $("userList");
+    ul.textContent = "";
+    profiles.forEach(function (p) {
+      var li = el("li");
+      li.style.setProperty("--oc", colorFor(p.username));
+      li.appendChild(el("span", "avatar", p.username.charAt(0).toUpperCase()));
+      li.appendChild(el("span", null, p.username));
+      if (p.is_admin) li.appendChild(el("span", "badge", "Admin"));
+      ul.appendChild(li);
+    });
+  }
+
+  // Reload whenever anyone changes the table. Several quick changes trigger one reload.
+  var reloadTimer;
+  function startLive() {
+    if (channel) return;
+    channel = db.channel("actions-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "actions" }, function () {
+        clearTimeout(reloadTimer);
+        reloadTimer = setTimeout(load, 200);
+      })
+      .subscribe(function (state) {
+        var on = state === "SUBSCRIBED";
+        $("live").classList.toggle("on", on);
+        $("live").textContent = on ? "Live" : "Reconnecting…";
+        if (on) load(); // catch anything missed while disconnected
+      });
+  }
+  function stopLive() {
+    if (channel) { db.removeChannel(channel); channel = null; }
+  }
+
+  // Show the sign-in screen or the tracker, depending on who is signed in.
+  var shownUser;
+  function applySession(session) {
+    var uid = session ? session.user.id : null;
+    if (uid === shownUser) return; // e.g. a token refresh for the same person
+    shownUser = uid;
+    showError("");
+    $("pwCard").hidden = true;
+    $("adminCard").hidden = true;
+
+    if (!session) {
+      me = null; items = []; profiles = []; loaded = false;
+      stopLive();
+      $("app").hidden = $("account").hidden = $("live").hidden = true;
+      $("signin").hidden = false;
+      render();
+      $("siUser").focus();
+      return;
+    }
+
+    var meta = session.user.user_metadata || {};
+    me = { id: uid, username: meta.username || session.user.email.split("@")[0], is_admin: false };
+    $("me").textContent = me.username;
+    $("signin").hidden = true;
+    $("siPass").value = "";
+    setMsg("siErr", "");
+    $("app").hidden = $("account").hidden = $("live").hidden = false;
+    startLive();
+    load();
+    loadProfiles().then(function () {
+      var mine = profiles.filter(function (p) { return p.id === uid; })[0];
+      if (mine && me && me.id === uid) { me = mine; $("me").textContent = mine.username; }
+      $("adminCard").hidden = !(me && me.is_admin);
+    });
+  }
+
+  db.auth.onAuthStateChange(function (event, session) {
+    // Run after the auth callback returns, so the Supabase calls inside don't wait on it.
+    setTimeout(function () { applySession(session); }, 0);
+  });
+
+  function fmt(d) {
+    var p = d.split("-");
+    var m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return parseInt(p[2], 10) + " " + m[parseInt(p[1], 10) - 1] + " " + p[0];
+  }
+  function dueLabel(it, t) {
+    if (it.done) return "Due " + fmt(it.due);
+    if (it.due < t) {
+      var days = Math.round((new Date(t) - new Date(it.due)) / 86400000);
+      return "Overdue by " + days + (days === 1 ? " day" : " days") + " · " + fmt(it.due);
+    }
+    if (it.due === t) return "Due today";
+    return "Due " + fmt(it.due);
+  }
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt != null) e.textContent = txt;
+    return e;
+  }
+
+  function render() {
+    var t = today();
+    var open = items.filter(function (i) { return !i.done; });
+    var late = open.filter(function (i) { return i.due < t; });
+    document.getElementById("nOpen").textContent = open.length;
+    document.getElementById("nDone").textContent = items.length - open.length;
+    document.getElementById("nLate").textContent = late.length;
+    document.getElementById("lateStat").classList.toggle("has", late.length > 0);
+    document.getElementById("exampleNote").hidden = !items.some(function (i) { return i.example; });
+
+    var map = {}, order = [];
+    items.forEach(function (i) {
+      var k = i.owner.toLowerCase();
+      if (!map[k]) { map[k] = { name: i.owner, list: [] }; order.push(k); }
+      map[k].list.push(i);
+    });
+    order.sort(function (a, b) { return map[a].name.localeCompare(map[b].name); });
+
+    var dl = document.getElementById("owners");
+    dl.textContent = "";
+    var names = order.map(function (k) { return map[k].name; });
+    profiles.forEach(function (p) { if (!map[p.username]) names.push(cap(p.username)); });
+    names.forEach(function (name) { var o = document.createElement("option"); o.value = name; dl.appendChild(o); });
+
+    var host = document.getElementById("groups");
+    host.textContent = "";
+    if (!items.length) {
+      host.appendChild(el("div", "card empty", loaded ? "No actions yet. Add the first one above, with an owner and a due date." : "Loading actions…"));
+      return;
+    }
+    order.forEach(function (k) {
+      var g = map[k];
+      g.list.sort(function (a, b) { return (a.done - b.done) || a.due.localeCompare(b.due); });
+      var nOpen = g.list.filter(function (i) { return !i.done; }).length;
+      var card = el("section", "card");
+      card.style.setProperty("--oc", colorFor(k));
+      var head = el("div", "group-head");
+      var who = el("div", "who");
+      who.appendChild(el("span", "avatar", g.name.charAt(0).toUpperCase()));
+      who.appendChild(el("h2", null, g.name));
+      head.appendChild(who);
+      head.appendChild(el("small", null, nOpen + " open · " + (g.list.length - nOpen) + " done"));
+      card.appendChild(head);
+      var ul = el("ul");
+      g.list.forEach(function (it) {
+        var isLate = !it.done && it.due < t;
+        var li = el("li", (isLate ? "late " : "") + (it.done ? "done" : ""));
+        var cb = document.createElement("input");
+        cb.type = "checkbox"; cb.checked = it.done; cb.id = "c-" + it.id;
+        cb.setAttribute("aria-label", "Mark done: " + it.text);
+        cb.addEventListener("change", function () {
+          it.done = cb.checked; render(); // show the tick straight away
+          write(db.from("actions").update({ done: it.done }).eq("id", it.id), "update the action");
+        });
+        var body = el("div", "body");
+        var tx = el("label", "text", it.text);
+        tx.htmlFor = cb.id; tx.style.cssText = "display:block;font-weight:500;font-size:inherit;color:inherit;cursor:pointer";
+        body.appendChild(tx);
+        body.appendChild(el("div", "due", dueLabel(it, t)));
+        var del = el("button", "del", "×");
+        del.type = "button"; del.setAttribute("aria-label", "Delete: " + it.text);
+        del.addEventListener("click", function () {
+          items = items.filter(function (x) { return x.id !== it.id; });
+          render();
+          write(db.from("actions").delete().eq("id", it.id), "delete the action");
+        });
+        li.appendChild(cb); li.appendChild(body); li.appendChild(del);
+        ul.appendChild(li);
+      });
+      card.appendChild(ul);
+      host.appendChild(card);
+    });
+  }
+
+  document.getElementById("form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var text = document.getElementById("text").value.trim();
+    var owner = document.getElementById("owner").value.trim();
+    var due = document.getElementById("due").value;
+    var err = document.getElementById("err");
+    if (!text || !owner || !due) {
+      err.textContent = "Add the action, an owner and a due date.";
+      return;
+    }
+    err.textContent = "";
+    var known = items.filter(function (i) { return i.owner.toLowerCase() === owner.toLowerCase(); })[0];
+    var btn = e.target.querySelector(".add");
+    btn.disabled = true;
+    db.from("actions").insert({ text: text, owner: known ? known.owner : owner, due: due })
+      .then(function (res) {
+        btn.disabled = false;
+        if (res.error) { err.textContent = "Couldn't save: " + res.error.message; return; }
+        document.getElementById("text").value = "";
+        document.getElementById("text").focus();
+        return load();
+      });
+  });
+
+  document.getElementById("clearExamples").addEventListener("click", function () {
+    if (!confirm("Delete the example actions for everyone?")) return;
+    items = items.filter(function (i) { return !i.example; });
+    render();
+    write(db.from("actions").delete().eq("example", true), "clear the examples");
+  });
+
+  // --- Sign in, sign out, change password ---
+  $("signinForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var u = $("siUser").value.trim().toLowerCase(), p = $("siPass").value;
+    if (!u || !p) { setMsg("siErr", "Enter your username and password."); return; }
+    var btn = e.target.querySelector("button");
+    btn.disabled = true;
+    setMsg("siErr", "");
+    db.auth.signInWithPassword({ email: u + "@" + EMAIL_DOMAIN, password: p }).then(function (res) {
+      btn.disabled = false;
+      if (res.error) setMsg("siErr", /invalid/i.test(res.error.message) ? "Wrong username or password." : res.error.message);
+    });
+  });
+
+  // "local" signs out this browser only, not the same person on other devices.
+  $("signOut").addEventListener("click", function () { db.auth.signOut({ scope: "local" }); });
+
+  $("pwToggle").addEventListener("click", function () {
+    var c = $("pwCard");
+    c.hidden = !c.hidden;
+    setMsg("pwErr", "");
+    if (!c.hidden) $("pwNew").focus();
+  });
+
+  $("pwForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var a = $("pwNew").value, b = $("pwConfirm").value;
+    if (a.length < 6) { setMsg("pwErr", "Use at least 6 characters."); return; }
+    if (a !== b) { setMsg("pwErr", "The two passwords don't match."); return; }
+    var btn = e.target.querySelector("button");
+    btn.disabled = true;
+    db.auth.updateUser({ password: a }).then(function (res) {
+      btn.disabled = false;
+      if (res.error) { setMsg("pwErr", res.error.message); return; }
+      $("pwNew").value = $("pwConfirm").value = "";
+      setMsg("pwErr", "Password changed.", true);
+    });
+  });
+
+  // --- Admin: add a user (runs the create-user Edge Function, which checks admin rights) ---
+  $("userForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var u = $("nuName").value.trim().toLowerCase(), p = $("nuPass").value;
+    if (!/^[a-z0-9_.-]{2,30}$/.test(u)) { setMsg("nuErr", "Username: 2–30 letters, numbers, dots, dashes or underscores."); return; }
+    if (p.length < 6) { setMsg("nuErr", "The initial password needs at least 6 characters."); return; }
+    var btn = e.target.querySelector("button");
+    btn.disabled = true;
+    setMsg("nuErr", "");
+    db.functions.invoke("create-user", { body: { username: u, password: p } })
+      .then(function (res) {
+        if (!res.error) return { ok: true };
+        var ctx = res.error.context;
+        if (ctx && ctx.json) {
+          return ctx.json().then(function (b) { return { msg: b.error }; }, function () { return { msg: res.error.message }; });
+        }
+        return { msg: res.error.message };
+      })
+      .then(function (r) {
+        btn.disabled = false;
+        if (!r.ok) { setMsg("nuErr", r.msg || "Couldn't add the user."); return; }
+        $("nuName").value = $("nuPass").value = "";
+        setMsg("nuErr", "Added " + u + ". They can sign in now.", true);
+        loadProfiles();
+      });
+  });
+
+  $("due").value = offset(7);
+  render();
+})();
+</script>
+</body>
+</html>
