@@ -64,11 +64,12 @@ h1 { font-size: 2.2rem; line-height: 1.1; color: var(--accent); background: var(
 form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 form .full { grid-column: 1 / -1; }
 label { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-weight: 600; font-size: 0.9rem; color: var(--muted); }
-input[type="text"], input[type="date"], input[type="password"] {
+select { cursor: pointer; }
+input[type="text"], input[type="date"], input[type="password"], select {
   font: inherit; font-size: 1.05rem; color: var(--ink); background: var(--bg);
   border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; width: 100%; min-width: 0;
 }
-input:focus-visible, button:focus-visible { outline: 3px solid var(--accent-text); outline-offset: 2px; }
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 3px solid var(--accent-text); outline-offset: 2px; }
 button { font: inherit; cursor: pointer; }
 .add {
   background: var(--grad); color: var(--accent-ink); border: 0; border-radius: 10px; box-shadow: var(--btn-shadow);
@@ -190,8 +191,9 @@ li.done + li { border-top: 0; margin-top: 6px; }
         <input type="text" id="text" placeholder="e.g. Send revised pricing to the client" autocomplete="off">
       </label>
       <label for="owner">Owner
-        <input type="text" id="owner" list="owners" placeholder="Who is responsible?" autocomplete="off">
-        <datalist id="owners"></datalist>
+        <select id="owner">
+          <option value="">Choose who is responsible</option>
+        </select>
       </label>
       <label for="due">Due date
         <input type="date" id="due">
@@ -284,8 +286,19 @@ li.done + li { border-top: 0; margin-top: 6px; }
         if (res.error) { showError("Couldn't load users: " + res.error.message); return; }
         profiles = res.data;
         renderUsers();
+        renderOwnerChoices();
         render();
       });
+  }
+
+  // Owner drop-down: one option per user, keeping the current choice if it still exists.
+  function renderOwnerChoices() {
+    var sel = $("owner"), current = sel.value;
+    while (sel.options.length > 1) sel.remove(1);
+    profiles.forEach(function (p) {
+      var name = cap(p.username);
+      sel.appendChild(new Option(name, name, false, name === current));
+    });
   }
 
   function renderUsers() {
@@ -333,6 +346,7 @@ li.done + li { border-top: 0; margin-top: 6px; }
 
     if (!session) {
       me = null; items = []; profiles = []; loaded = false;
+      renderOwnerChoices();
       stopLive();
       $("app").hidden = $("account").hidden = $("live").hidden = true;
       $("signin").hidden = false;
@@ -401,12 +415,6 @@ li.done + li { border-top: 0; margin-top: 6px; }
     });
     order.sort(function (a, b) { return map[a].name.localeCompare(map[b].name); });
 
-    var dl = document.getElementById("owners");
-    dl.textContent = "";
-    var names = order.map(function (k) { return map[k].name; });
-    profiles.forEach(function (p) { if (!map[p.username]) names.push(cap(p.username)); });
-    names.forEach(function (name) { var o = document.createElement("option"); o.value = name; dl.appendChild(o); });
-
     var host = document.getElementById("groups");
     host.textContent = "";
     if (!items.length) {
@@ -464,7 +472,7 @@ li.done + li { border-top: 0; margin-top: 6px; }
     var due = document.getElementById("due").value;
     var err = document.getElementById("err");
     if (!text || !owner || !due) {
-      err.textContent = "Add the action, an owner and a due date.";
+      err.textContent = "Add the action, choose an owner and set a due date.";
       return;
     }
     err.textContent = "";
